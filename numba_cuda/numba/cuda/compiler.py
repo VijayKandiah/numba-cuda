@@ -14,7 +14,6 @@ from numba.core.compiler import (
     sanitize_compile_result_entries,
     CompilerBase,
     DefaultPassBuilder,
-    CompileResult,
 )
 from numba.core.compiler_lock import global_compiler_lock
 from numba.core.compiler_machinery import (
@@ -39,6 +38,7 @@ from numba.cuda.cudadrv import nvvm, nvrtc
 from numba.cuda.descriptor import cuda_target
 from numba.cuda.flags import CUDAFlags
 from numba.cuda.target import CUDACABICallConv
+from numba.cuda.core.compiler import CompileResult
 from numba.cuda import lowering
 
 
