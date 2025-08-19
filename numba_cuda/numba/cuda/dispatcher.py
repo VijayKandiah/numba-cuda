@@ -193,7 +193,7 @@ class _Kernel(serialize.ReduceMixin):
             return found_functions
 
         # Link to the helper library functions if needed
-        link_to_library_functions(reshape_funcs, "reshape_funcs.cu")
+        # link_to_library_functions(reshape_funcs, "reshape_funcs.cu")
 
         self.maybe_link_nrt(link, tgt_ctx, asm)
 

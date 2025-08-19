@@ -2,25 +2,25 @@ from collections import namedtuple
 import itertools
 import functools
 import operator
-import ctypes
-
 import numpy as np
-
-from numba import _helperlib
 
 Extent = namedtuple("Extent", ["begin", "end"])
 
-attempt_nocopy_reshape = ctypes.CFUNCTYPE(
-    ctypes.c_int,
-    ctypes.c_long,  # nd
-    np.ctypeslib.ndpointer(np.ctypeslib.c_intp, ndim=1),  # dims
-    np.ctypeslib.ndpointer(np.ctypeslib.c_intp, ndim=1),  # strides
-    ctypes.c_long,  # newnd
-    np.ctypeslib.ndpointer(np.ctypeslib.c_intp, ndim=1),  # newdims
-    np.ctypeslib.ndpointer(np.ctypeslib.c_intp, ndim=1),  # newstrides
-    ctypes.c_long,  # itemsize
-    ctypes.c_int,  # is_f_order
-)(_helperlib.c_helpers["attempt_nocopy_reshape"])
+
+# Defer the declare_device import to avoid circular imports
+def _get_attempt_nocopy_reshape():
+    from numba.cuda.decorators import declare_device
+    import os
+
+    basedir = os.path.dirname(os.path.abspath(__file__))
+    reshape_funcs_cu = os.path.join(basedir, "../reshape_funcs.cu")
+    sig = "int32(int64, CPointer(int64), CPointer(int64), int64, CPointer(int64), CPointer(int64), int64, int32)"
+    return declare_device(
+        "numba_attempt_nocopy_reshape", sig, link=reshape_funcs_cu
+    )
+
+
+attempt_nocopy_reshape = None
 
 
 class Dim(object):
@@ -337,6 +337,11 @@ class Array(object):
             olddims = np.array(self.shape, dtype=np.ctypeslib.c_intp)
             oldstrides = np.array(self.strides, dtype=np.ctypeslib.c_intp)
             newdims = np.array(newdims, dtype=np.ctypeslib.c_intp)
+
+            # Initialize the function if not already done
+            global attempt_nocopy_reshape
+            if attempt_nocopy_reshape is None:
+                attempt_nocopy_reshape = _get_attempt_nocopy_reshape()
 
             if not attempt_nocopy_reshape(
                 oldnd,
